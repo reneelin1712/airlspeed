@@ -64,25 +64,12 @@ def create_path_level_features(edge2attr, transit_dict, graph, num_level, featur
             if ori == des:
                 path_features = create_path_features([ori], edge2attr, transit_dict, graph, num_level) + [1]
                 od_features[ori, ori, :] = path_features
-            try:
-                candidate_path = ksp_yen(graph, ori, des, 1)
-                if len(candidate_path) == 0:
-                    raise ValueError("No path found")
-                path_features = create_path_features(candidate_path[0]['path'], edge2attr, transit_dict, graph,
-                                                     num_level) + [1]
-                od_features[ori, des, :] = path_features
-            except (KeyError, ValueError) as e:
-                print(f"Error occurred for ori={ori}, des={des}: {str(e)}")
-                candidate_path = 0
-            # if ori == des:
-            #     path_features = create_path_features([ori], edge2attr, transit_dict, graph, num_level) + [1]
-            #     od_features[ori, ori, :] = path_features
-            # candidate_path = ksp_yen(graph, ori, des, 1)
-            # if len(candidate_path) == 0:
-            #     continue
-            # path_features = create_path_features(candidate_path[0]['path'], edge2attr, transit_dict, graph,
-            #                                      num_level) + [1]
-            # od_features[ori, des, :] = path_features
+            candidate_path = ksp_yen(graph, ori, des, 1)
+            if len(candidate_path) == 0:
+                continue
+            path_features = create_path_features(candidate_path[0]['path'], edge2attr, transit_dict, graph,
+                                                 num_level) + [1]
+            od_features[ori, des, :] = path_features
     print(od_features.shape)
     np.save(feature_path, od_features)
 

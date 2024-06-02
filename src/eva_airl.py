@@ -21,7 +21,7 @@ def load_model(model_path):
     print("Discrim Model loaded Successfully")
 
 cv = 0  # cross validation process [0, 1, 2, 3, 4]
-size = 100  # size of training data [100, 1000, 10000]
+size = 1000  # size of training data [100, 1000, 10000]
 gamma = 0.99  # discount factor
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -64,6 +64,57 @@ discrim_net = DiscriminatorAIRLCNN(env.n_actions, gamma, env.policy_mask,
                                    env.pad_idx).to(device)
 
 
+# def evaluate_rewards(test_traj, test_weather, policy_net, discrim_net, env):
+#     device = torch.device('cpu')  # Use CPU device
+#     policy_net.to(device)  # Move policy_net to CPU
+#     discrim_net.to(device)  # Move discrim_net to CPU
+
+#     reward_data = []
+#     for episode_idx, (episode, weather) in enumerate(zip(test_traj, test_weather)):
+#         des = torch.LongTensor([episode[-1].next_state]).long().to(device)
+#         weather_var = torch.LongTensor([weather]).long().to(device)
+#         for step_idx, x in enumerate(episode):
+#             state = torch.LongTensor([x.cur_state]).to(device)
+#             next_state = torch.LongTensor([x.next_state]).to(device)
+#             action = torch.LongTensor([x.action]).to(device)
+            
+#             action_rewards = []
+#             for a in env.get_action_list(x.cur_state):
+#                 action_tensor = torch.LongTensor([a]).to(device)
+#                 with torch.no_grad():
+#                     log_prob = policy_net.get_log_prob(state, des, weather_var, action_tensor).squeeze()
+#                     reward = discrim_net.calculate_reward(state, des, action_tensor, log_prob, next_state, weather_var).item()
+#                 action_rewards.append((a, reward))
+            
+#             max_reward_action = max(action_rewards, key=lambda x: x[1])
+            
+#             reward_data.append({
+#                 'episode': episode_idx + 1,
+#                 'step': step_idx + 1,
+#                 'state': x.cur_state,
+#                 'action': x.action,
+#                 'next_state': x.next_state,
+#                 'chosen_action_reward': next(r for a, r in action_rewards if a == x.action),
+#                 'max_reward_action': max_reward_action[0],
+#                 'max_reward': max_reward_action[1]
+#             })
+            
+#             for a, r in action_rewards:
+#                 reward_data.append({
+#                     'episode': episode_idx + 1,
+#                     'step': step_idx + 1,
+#                     'state': x.cur_state,
+#                     'action': a,
+#                     'next_state': x.next_state,
+#                     'chosen_action_reward': None,
+#                     'max_reward_action': None,
+#                     'max_reward': None,
+#                     'action_reward': r
+#                 })
+    
+#     reward_df = pd.DataFrame(reward_data)
+#     return reward_df
+
 def evaluate_rewards(test_traj, test_weather, policy_net, discrim_net, env):
     device = torch.device('cpu')  # Use CPU device
     policy_net.to(device)  # Move policy_net to CPU
@@ -73,20 +124,20 @@ def evaluate_rewards(test_traj, test_weather, policy_net, discrim_net, env):
     for episode_idx, (episode, weather) in enumerate(zip(test_traj, test_weather)):
         des = torch.LongTensor([episode[-1].next_state]).long().to(device)
         weather_var = torch.LongTensor([weather]).long().to(device)
+        trajectory = []
         for step_idx, x in enumerate(episode):
             state = torch.LongTensor([x.cur_state]).to(device)
             next_state = torch.LongTensor([x.next_state]).to(device)
             action = torch.LongTensor([x.action]).to(device)
             
-            action_rewards = []
-            for a in env.get_action_list(x.cur_state):
-                action_tensor = torch.LongTensor([a]).to(device)
-                with torch.no_grad():
-                    log_prob = policy_net.get_log_prob(state, des, weather_var, action_tensor).squeeze()
-                    reward = discrim_net.calculate_reward(state, des, action_tensor, log_prob, next_state, weather_var).item()
-                action_rewards.append((a, reward))
+            with torch.no_grad():
+                log_prob = policy_net.get_log_prob(state, des, weather_var, action).squeeze()
+                reward = discrim_net.calculate_reward(state, des, action, log_prob, next_state, weather_var).item()
             
-            max_reward_action = max(action_rewards, key=lambda x: x[1])
+            trajectory.append({
+                'state': x.cur_state,
+                'action': x.action
+            })
             
             reward_data.append({
                 'episode': episode_idx + 1,
@@ -94,23 +145,14 @@ def evaluate_rewards(test_traj, test_weather, policy_net, discrim_net, env):
                 'state': x.cur_state,
                 'action': x.action,
                 'next_state': x.next_state,
-                'chosen_action_reward': next(r for a, r in action_rewards if a == x.action),
-                'max_reward_action': max_reward_action[0],
-                'max_reward': max_reward_action[1]
+                'reward': reward
             })
-            
-            for a, r in action_rewards:
-                reward_data.append({
-                    'episode': episode_idx + 1,
-                    'step': step_idx + 1,
-                    'state': x.cur_state,
-                    'action': a,
-                    'next_state': x.next_state,
-                    'chosen_action_reward': None,
-                    'max_reward_action': None,
-                    'max_reward': None,
-                    'action_reward': r
-                })
+        
+        # Record the complete trajectory for each episode
+        reward_data.append({
+            'episode': episode_idx + 1,
+            'trajectory': trajectory
+        })
     
     reward_df = pd.DataFrame(reward_data)
     return reward_df

@@ -29,13 +29,14 @@ model_p = "C:/AI/rcm-airl-my-data/synthetic/trained_models/airl_CV%d_size%d.pt" 
 test_p = "C:/AI/rcm-airl-my-data/synthetic/data/cross_validation/test_CV%d.csv" % cv
 
 """environment"""
-edge_p = "C:/AI/rcm-airl-my-data/synthetic/data/edge.txt"
-network_p = "C:/AI/rcm-airl-my-data/synthetic/data/transit.npy"
-path_feature_p = "C:/AI/rcm-airl-my-data/synthetic/data/feature_od.npy"
-train_p = "C:/AI/rcm-airl-my-data/synthetic/data/cross_validation/train_CV%d_size%d.csv" % (cv, size)
-test_p = "C:/AI/rcm-airl-my-data/synthetic/data/cross_validation/test_CV%d.csv" % cv
+edge_p = "../data/edge.txt"
+network_p = "../data/transit.npy"
+path_feature_p = "../data/feature_od.npy"
+train_p = "../data/cross_validation/train_CV%d_size%d.csv" % (cv, size)
+test_p = "../data/cross_validation/test_CV%d.csv" % cv
 # test_p = "../data/cross_validation/train_CV%d_size%d.csv" % (cv, size)
-model_p = "C:/AI/rcm-airl-my-data/synthetic/trained_models/airl_CV%d_size%d.pt" % (cv, size)
+model_p = "../trained_models/airl_CV%d_size%d.pt" % (cv, size)
+
 """inialize road environment"""
 od_list, od_dist = ini_od_dist(train_p)
 env = RoadWorld(network_p, edge_p, pre_reset=(od_list, od_dist))
@@ -132,7 +133,7 @@ def evaluate_rewards(test_traj, test_weather, policy_net, discrim_net, env):
 
 """Evaluate rewards"""
 test_trajs = env.import_demonstrations_step(test_p)
-test_weather = [traj[0].weather for traj in test_trajs]
+test_weather = [traj[0].speed for traj in test_trajs]
 reward_df = evaluate_rewards(test_trajs, test_weather, policy_net, discrim_net, env)
 
 # # Print or analyze the reward_list as needed

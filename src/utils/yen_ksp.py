@@ -200,6 +200,12 @@ class Graph:
 
 def ksp_yen(graph, node_start, node_end, max_k=5):
     distances, previous = dijkstra(graph, node_start)
+    # print('node start', node_start)
+    # print('node end', node_end)
+
+    if node_end not in distances:
+        return []  # Return an empty list if node_end is not reachable
+
 
     A = [{'cost': distances[node_end],
           'path': path(previous, node_start, node_end)}]
@@ -331,6 +337,10 @@ def dijkstra(graph, node_start, node_end=None):
         if v == node_end:
             break
 
+        if graph[v] is None:
+            print('node_start',node_start)
+            continue  # Skip nodes with no outgoing edges
+
         for u in graph[v]:
             cost_vu = distances[v] + graph[v][u]
 
@@ -384,6 +394,9 @@ def path(previous, node_start, node_end):
     node_curr = node_end
     while True:
         route.append(node_curr)
+        if node_curr not in previous:
+            return []  # No path found from node_start to node_end through node_curr
+        
         if previous[node_curr] == node_start:
             route.append(node_start)
             break

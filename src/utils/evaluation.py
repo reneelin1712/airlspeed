@@ -38,6 +38,10 @@ def evaluate_edit_dist(test_trajs, learner_trajs, test_od_dict):
 def evaluate_bleu_score(test_trajs, learner_trajs, test_od_dict):
     print('test_trajs',test_trajs[0])
     print('learner_trajs',learner_trajs[0])
+    print('test_trajs',test_trajs[1])
+    print('learner_trajs',learner_trajs[1])
+    print('test_trajs',test_trajs[2])
+    print('learner_trajs',learner_trajs[2])
     bleu_score_list = []
     for od in test_od_dict.keys():
         idx_list = test_od_dict[od]
